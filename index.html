@@ -29,8 +29,8 @@
             var name = cutimg()
             var state = canvas.toDataURL('imge/jpeg', 1.0)
             var doc = new jsPDF('', 'pt', 'a4')
-            doc.addImage(state, 'JPEG', 0,200, 850, 30)
-            doc.addImage(name,'PNG',100,100,595.28,400)
+            doc.addImage(state, 'JPEG', 0, 200, 850, 30)
+            doc.addImage(name, 'PNG', 100, 100, 595.28, 400)
             //A4尺寸比例壓縮圖片595.28, 592.28 / canvas.width * canvas.height
             doc.save('TEST.pdf')
         });
@@ -45,6 +45,7 @@
     let ctx = canvas.getContext('2d');
     let isDrawing = false;
     let [lastX, lastY] = [0, 0];
+    let [touchlastX, touchlastY] = [0, 0];
     function draw(e) {
         if (!isDrawing) return;
         // 畫畫
@@ -57,12 +58,44 @@
         ctx.beginPath();
         // 將畫筆移動到下筆座標點
         ctx.moveTo(lastX, lastY);
+        console.log(lastX, lastY);
         // 從目前畫筆位置畫線到新座標點 (滑鼠所在位置)
         ctx.lineTo(e.offsetX, e.offsetY);
         // 上面都是在規劃路徑, 這裡才是將線畫出來
         ctx.stroke();
         // 每次畫完後更新下筆點
         [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+    function touchdraw(e) {
+        if (!isDrawing) return;
+        var touch = e.targetTouches[0]
+        // 畫畫
+        // 設定線條色彩
+        ctx.strokeStyle = `black`;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 20;
+        // 開始設定路徑
+        ctx.beginPath();
+        // 將畫筆移動到下筆座標點
+        ctx.moveTo(touchlastX, touchlastY);
+        // 從目前畫筆位置畫線到新座標點 (滑鼠所在位置)
+        ctx.lineTo(touch.pageX - touch.target.offsetLeft, touch.pageY - touch.target.offsetTop);
+        // 上面都是在規劃路徑, 這裡才是將線畫出來
+        ctx.stroke();
+        // 每次畫完後更新下筆點
+        e.preventDefault();
+        [touchlastX, touchlastY] = [touch.pageX - touch.target.offsetLeft, touch.pageY - touch.target.offsetTop];
+    }
+    function touchstart(e) {
+        isDrawing = true
+        var offsetx = e.targetTouches[0].pageX - e.targetTouches[0].target.offsetLeft
+        var offsety = e.targetTouches[0].pageY - e.targetTouches[0].target.offsetTop
+        // 每次滑鼠按下時先將下筆點移到畫筆位置
+        //[touchlastX,touchlastY] = [offsetx,offsety];
+        touchlastX = offsetx
+        touchlastY = offsety
+        e.preventDefault();
     }
     function clears() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -78,17 +111,14 @@
         isDrawing = true;
         // 每次滑鼠按下時先將下筆點移到畫筆位置
         [lastX, lastY] = [e.offsetX, e.offsetY];
+        console.log(123)
     });
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', () => isDrawing = false);
-    canvas.addEventListener('mouseout', () => isDrawing = false);
-    canvas.addEventListener('touchstart',(e)=>{
-        isDrawing = true;
-        // 每次滑鼠按下時先將下筆點移到畫筆位置
-        [lastX, lastY] = [e.offsetX, e.offsetY];
-    })
-    canvas.addEventListener('touchmove', draw);
-    //canvas.addEventListener('touchend', () => isDrawing = false);
+    //canvas.addEventListener('mouseout', () => isDrawing = false);
+    canvas.addEventListener('touchstart', touchstart)
+    canvas.addEventListener('touchmove', touchdraw);
+    canvas.addEventListener('touchend', () => isDrawing = false);
     //canvas.addEventListener('touchcancel', () => isDrawing = false);
 </script>
 
